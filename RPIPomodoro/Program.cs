@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Device.Gpio;
+using System.Linq.Expressions;
 using System.Threading;
 
 namespace RPIPomodoro
@@ -12,86 +13,70 @@ namespace RPIPomodoro
         public const int button1 = 5;
         public const int button2 = 6;
         public const int button3 = 7;
-        const int timeout = 500;
-        static void CheckForButtons(GpioController controller)
-        {
-            if (controller.Read(button1) == 1)
-                Console.WriteLine("Button1 is triggered");
-            if (controller.Read(button2) == 1)
-                Console.WriteLine("Button2 is triggered");
-            if (controller.Read(button3) == 1)
-                Console.WriteLine("Button3 is triggered");
-        }
-        static void InitInputs(GpioController controller)
-        {
-            controller.OpenPin(pin1, PinMode.Output);
-            controller.OpenPin(pin2, PinMode.Output);
-            controller.OpenPin(pin3, PinMode.Output);
+        public static Timer workingTimer = null;
+        public static Timer breakTimer = null;
+        public static Timer freeTimer = null;
 
-            controller.OpenPin(button1, PinMode.InputPullDown);
-            controller.OpenPin(button2, PinMode.InputPullDown);
-            controller.OpenPin(button3, PinMode.InputPullDown);
+        public static LED workingLed = null;
+        public static LED breakLed = null;
+        public static LED freeLed = null;
+        public static HardwareButton workingButton = null;
+        public static HardwareButton breakButton = null;
+        public static HardwareButton freeButton = null;
+        public static bool AreTimersRunning()
+        {
+            // Note: We don't care if freeTimer is running
+            return workingTimer?.running == true || breakTimer?.running == true;
         }
-        
+        public static void MakeAllLEDSBlinkShort()
+        {
+            workingLed.MakeBlink();
+            breakLed.MakeBlink();
+            freeLed.MakeBlink();
+        }
+        public static void SetAllLEDSState(LED.State s)
+        {
+            workingLed.myState = s;
+            breakLed.myState = s;
+            freeLed.myState = s;
+        }
+        public static HardwareButton.ButtonTrigger makeDelegate(Timer t, LED l)
+        {
+            return delegate (bool lastCallState)
+            {
+                if (AreTimersRunning() && lastCallState)
+                {
+                    MakeAllLEDSBlinkShort();
+                    return true;
+                }
+                t.Reset();
+                SetAllLEDSState(LED.State.Off);
+                l.myState = LED.State.On;
+                return false;
+            };
+        }
         static void Main(string[] args)
         {
-            Console.WriteLine("Starting pomodoro app");
-            using (GpioController controller = new GpioController())
-            { 
-                InitInputs(controller);
-                LedController.controller = controller;
-                Thread LedProcess = new Thread(new ThreadStart(LedController.ThreadProc));
-                PomodoroController.controller = controller;
-                Thread PomodoroProcess = new Thread(new ThreadStart(PomodoroController.ThreadProc));
-                LedProcess.Start();
-                PomodoroProcess.Start();
-                LedProcess.Join();
-                PomodoroProcess.Join();
-            }
-            Console.WriteLine("Stopping pomodoro app");
-            
-        }
-        static void oldMain()
-        {
-            //Console.WriteLine("Hello World!");
-            Console.WriteLine("Lets blink the LED's");
             using (GpioController controller = new GpioController())
             {
-                controller.OpenPin(pin1, PinMode.Output);
-                controller.OpenPin(pin2, PinMode.Output);
-                controller.OpenPin(pin3, PinMode.Output);
-
-                controller.OpenPin(button1, PinMode.InputPullDown);
-                controller.OpenPin(button2, PinMode.InputPullDown);
-                controller.OpenPin(button3, PinMode.InputPullDown);
-
-                Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs eventArgs) =>
-                {
-                    controller.Dispose();
-                };
-
+                workingLed = new LED(controller, pin1);
+                breakLed = new LED(controller, pin2);
+                freeLed = new LED(controller, pin3);
+                workingTimer = new Timer(new TimeSpan(0, 30, 0));
+                breakTimer = new Timer(new TimeSpan(0, 5, 0));
+                freeTimer = new Timer(new TimeSpan(0, 0, 0));
+                workingButton = new HardwareButton(controller, button1, makeDelegate(workingTimer, workingLed));
+                breakButton = new HardwareButton(controller, button1, makeDelegate(breakTimer, breakLed));
+                freeButton = new HardwareButton(controller, button1, makeDelegate(freeTimer, freeLed));
                 while (true)
                 {
-                    Console.WriteLine($"Pin1 - {pin1}");
-                    CheckForButtons(controller);
-                    controller.Write(pin1, PinValue.High);
-                    controller.Write(pin2, PinValue.Low);
-                    controller.Write(pin3, PinValue.Low);
-                    Thread.Sleep(timeout);
-                    Console.WriteLine($"Pin1 - {pin2}");
-                    CheckForButtons(controller);
-                    controller.Write(pin1, PinValue.Low);
-                    controller.Write(pin2, PinValue.High);
-                    controller.Write(pin3, PinValue.Low);
-                    Thread.Sleep(timeout);
-                    Console.WriteLine($"Pin1 - {pin3}");
-                    CheckForButtons(controller);
-                    controller.Write(pin1, PinValue.Low);
-                    controller.Write(pin2, PinValue.Low);
-                    controller.Write(pin3, PinValue.High);
-                    Thread.Sleep(timeout);
+                    if (workingTimer?.expired == true || breakTimer?.expired == true)
+                        SetAllLEDSState(LED.State.Blinking);
+                    workingLed.DoAction();
+                    breakLed.DoAction();
+                    freeLed.DoAction();
+                    Thread.Sleep(250);
                 }
-
             }
         }
     }
