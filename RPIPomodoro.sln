@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30002.166
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RPIPomodoro", "RPIPomodoro\RPIPomodoro.csproj", "{6760F5EF-7B87-49D1-93AE-19D3E01C68E1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6760F5EF-7B87-49D1-93AE-19D3E01C68E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6760F5EF-7B87-49D1-93AE-19D3E01C68E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6760F5EF-7B87-49D1-93AE-19D3E01C68E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6760F5EF-7B87-49D1-93AE-19D3E01C68E1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {751295F5-7B72-48ED-9D5E-88EA5DB02849}
+	EndGlobalSection
+EndGlobal
